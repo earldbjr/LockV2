@@ -1,6 +1,8 @@
 //Fuses H:0xDE L:0xE2 E:0x05
 
 #include <LiquidCrystal.h>
+#include <SPI.h>
+#include "MFRC522.h"
 #include "FPS_GT511C3.h"
 #include "SoftwareSerial.h"
 
@@ -12,11 +14,20 @@
 #define lockPin2 8
 
 int isLocked = 0;
+String card1 = "2454512237";   //Given to Sun Bay office
+String card2 = "401641025450129"; //Zahrah's Purse
+String card3 = "166204210181"; //Zahrah's Keychain
+String card4 = "4201651025450129";
+String card5 = "4201651025450129";   //Gizmo's Wallet
+String card6 = "2454512237";
+
+MFRC522 rfid(SS_PIN, RST_PIN);
 LiquidCrystal lcd(A5,A4,A3,A2,A1,A0);
 FPS_GT511C3 fps(3,2);
 
 void setup()
 {
+  SPI.begin();
   lcd.begin(16,2);
   pinMode(FPSPower, OUTPUT);
   digitalWrite(FPSPower, HIGH); //To be toggled later...
@@ -57,12 +68,96 @@ void checkBiometrics()
     lcd.setCursor(0,0);
     lcd.print("FPS Ready   ");
   }
-  delay(100); 
+  delay(100);
 }
 
 void checkRFID()
 {
-  
+  String idRead;
+  // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
+  MFRC522::MIFARE_Key key;
+  for (byte i = 0; i < 6; i++) 
+  {
+    key.keyByte[i] = 0xFF;
+  }
+  // New card found && new card selected
+  if ( rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial())
+  {
+    /*
+      for (byte i = 0; i < rfid.uid.size; i++) {
+     -                Serial.print(rfid.uid.uidByte[i] < 0x10 ? " 0" : " ");
+     -                Serial.print(rfid.uid.uidByte[i], HEX);
+     -        } 
+     */
+    for (byte i = 0; i < rfid.uid.size; i++) 
+    { // Dump UID for authentication
+      idRead.concat(rfid.uid.uidByte[i]);
+    }
+    digitalWrite(lcdBacklight, HIGH);
+    lcd.setCursor(0,0);
+    lcd.print("Bad Card!");
+    lcd.setCursor(0,1);
+    lcd.print(idRead);
+    lcd.setCursor(0,0);
+    if (idRead == card1)
+    {
+      lcd.print("Card 1 read!");
+      lcd.setCursor(0,1);
+      lcd.print(idRead);
+      if(isLocked == 1){
+        unlock();
+      }
+    }
+    if (idRead == card2)
+    {
+      lcd.print("Card 2 read!");
+      lcd.setCursor(0,1);
+      lcd.print(idRead);
+      if(isLocked == 1){
+        unlock();
+      }
+    }    
+    if (idRead == card3)
+    {
+      lcd.print("Card 3 read!");
+      lcd.setCursor(0,1);
+      lcd.print(idRead);
+      if(isLocked == 1){
+        unlock();
+      }
+    }   
+    if (idRead == card4)
+    {
+      lcd.print("Card 4 read!");
+      lcd.setCursor(0,1);
+      lcd.print(idRead);
+      if(isLocked == 1){
+        unlock();
+      }
+    }    
+    if (idRead == card5)
+    {
+      lcd.print("Card 5 read!");
+      lcd.setCursor(0,1);
+      lcd.print(idRead);
+      if(isLocked == 1){
+        unlock();
+      }
+    }    
+    if (idRead == card6)
+    {
+      lcd.print("Card 6 read!");
+      lcd.setCursor(0,1);
+      lcd.print(idRead);
+      if(isLocked == 1){
+        unlock();
+      }
+    }
+
+    delay(5000);
+    digitalWrite(lcdBacklight, LOW);
+    lcd.clear();
+  }
 }
 
 void loop()
@@ -93,6 +188,7 @@ void lock()
 
 void doorWatcher()
 {
- //Put 10 second timeout here, and break block.
- //Block code execution until door opened and closed, then run lock. 
+  //Put 10 second timeout here, and break block.
+  //Block code execution until door opened and closed, then run lock. 
 }
+
