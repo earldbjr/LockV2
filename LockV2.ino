@@ -28,11 +28,14 @@ FPS_GT511C3 fps(3,2);
 void setup()
 {
   SPI.begin();
+  rfid.PCD_Init();
   lcd.begin(16,2);
   pinMode(FPSPower, OUTPUT);
   digitalWrite(FPSPower, HIGH); //To be toggled later...
   delay(100);
   fps.Open();
+  delay(100);
+  fps.SetLED(true);
   fps.SetLED(true);
 }
 void checkBiometrics();
@@ -73,6 +76,9 @@ void checkBiometrics()
 
 void checkRFID()
 {
+
+  lcd.setCursor(0,0);
+  lcd.print("RFIDReady");
   String idRead;
   // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
   MFRC522::MIFARE_Key key;
@@ -83,22 +89,18 @@ void checkRFID()
   // New card found && new card selected
   if ( rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial())
   {
-    /*
-      for (byte i = 0; i < rfid.uid.size; i++) {
-     -                Serial.print(rfid.uid.uidByte[i] < 0x10 ? " 0" : " ");
-     -                Serial.print(rfid.uid.uidByte[i], HEX);
-     -        } 
-     */
+
+     lcd.setCursor(0,0);
+     lcd.print("Found!");
     for (byte i = 0; i < rfid.uid.size; i++) 
     { // Dump UID for authentication
       idRead.concat(rfid.uid.uidByte[i]);
     }
     digitalWrite(lcdBacklight, HIGH);
-    lcd.setCursor(0,0);
-    lcd.print("Bad Card!");
     lcd.setCursor(0,1);
     lcd.print(idRead);
-    lcd.setCursor(0,0);
+    delay(5000);
+
     if (idRead == card1)
     {
       lcd.print("Card 1 read!");
