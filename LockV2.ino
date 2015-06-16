@@ -5,8 +5,6 @@
 #include "MFRC522.h"
 #include "FPS_GT511C3.h"
 #include "SoftwareSerial.h"
-#include <FPS.h>;
-#include <RFID.h>;
 
 #define SS_PIN 10
 #define RST_PIN 9
@@ -17,7 +15,7 @@
 
 int isLocked = 0;
 String card1 = "2454512237";   //Given to Sun Bay office
-String card2 = "4201651025450129";
+String card2 = "401641025450129"; //Zahrah's Purse
 String card3 = "166204210181"; //Zahrah's Keychain
 String card4 = "4201651025450129";
 String card5 = "4201651025450129";   //Gizmo's Wallet
@@ -31,14 +29,11 @@ void setup()
 {
   SPI.begin();
   lcd.begin(16,2);
-  lcd.print("setup");
   pinMode(FPSPower, OUTPUT);
   digitalWrite(FPSPower, HIGH); //To be toggled later...
   delay(100);
-  lcd.print("Powered");
   fps.Open();
   fps.SetLED(true);
-  lcd.print("true");
 }
 void checkBiometrics();
 void checkRFID();
@@ -46,9 +41,124 @@ void unlock();
 void lock();
 void doorWatcher(); //Blocking!
 
+void checkBiometrics()
+{
+  // Identify fingerprint testx
+  if (fps.IsPressFinger())
+  {
+    fps.CaptureFinger(false);
+    int id = fps.Identify1_N();
+    if (id <200)
+    {
+      lcd.setCursor(0,0);
+      lcd.print("Verified ID:");
+      lcd.setCursor(0,1);
+      lcd.print(id);
+      unlock();
+      doorWatcher(); //Blocking!
+    }
+    else
+    {
+      lcd.setCursor(0,1);
+      lcd.print("F");
+    }
+  }
+  else
+  {
+    lcd.setCursor(0,0);
+    lcd.print("FPS Ready   ");
+  }
+  delay(100);
+}
 
+void checkRFID()
+{
+  String idRead;
+  // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
+  MFRC522::MIFARE_Key key;
+  for (byte i = 0; i < 6; i++) 
+  {
+    key.keyByte[i] = 0xFF;
+  }
+  // New card found && new card selected
+  if ( rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial())
+  {
+    /*
+      for (byte i = 0; i < rfid.uid.size; i++) {
+     -                Serial.print(rfid.uid.uidByte[i] < 0x10 ? " 0" : " ");
+     -                Serial.print(rfid.uid.uidByte[i], HEX);
+     -        } 
+     */
+    for (byte i = 0; i < rfid.uid.size; i++) 
+    { // Dump UID for authentication
+      idRead.concat(rfid.uid.uidByte[i]);
+    }
+    digitalWrite(lcdBacklight, HIGH);
+    lcd.setCursor(0,0);
+    lcd.print("Bad Card!");
+    lcd.setCursor(0,1);
+    lcd.print(idRead);
+    lcd.setCursor(0,0);
+    if (idRead == card1)
+    {
+      lcd.print("Card 1 read!");
+      lcd.setCursor(0,1);
+      lcd.print(idRead);
+      if(isLocked == 1){
+        unlock();
+      }
+    }
+    if (idRead == card2)
+    {
+      lcd.print("Card 2 read!");
+      lcd.setCursor(0,1);
+      lcd.print(idRead);
+      if(isLocked == 1){
+        unlock();
+      }
+    }    
+    if (idRead == card3)
+    {
+      lcd.print("Card 3 read!");
+      lcd.setCursor(0,1);
+      lcd.print(idRead);
+      if(isLocked == 1){
+        unlock();
+      }
+    }   
+    if (idRead == card4)
+    {
+      lcd.print("Card 4 read!");
+      lcd.setCursor(0,1);
+      lcd.print(idRead);
+      if(isLocked == 1){
+        unlock();
+      }
+    }    
+    if (idRead == card5)
+    {
+      lcd.print("Card 5 read!");
+      lcd.setCursor(0,1);
+      lcd.print(idRead);
+      if(isLocked == 1){
+        unlock();
+      }
+    }    
+    if (idRead == card6)
+    {
+      lcd.print("Card 6 read!");
+      lcd.setCursor(0,1);
+      lcd.print(idRead);
+      if(isLocked == 1){
+        unlock();
+      }
+    }
 
-
+    delay(5000);
+    digitalWrite(lcdBacklight, LOW);
+    lcd.clear();
+  }
+}
 
 void loop()
 {
