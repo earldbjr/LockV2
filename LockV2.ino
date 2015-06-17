@@ -1,4 +1,4 @@
-//Fuses H:0xDE L:0xE2 E:0x05
+//Fuses H:0xDE L:0xE2 E:0x05 For 8MHz internal atmega328p
 
 #include <LiquidCrystal.h>
 #include <SPI.h>
@@ -12,7 +12,7 @@
 #define FPSPower 4
 #define lockPin1 7
 #define lockPin2 8
-
+long lcdBacklightTimer = 0;
 int isLocked = 0;
 String card1 = "2454512237";   //Given to Sun Bay office
 String card2 = "401641025450129"; //Zahrah's Purse
@@ -29,13 +29,14 @@ void setup()
 {
   SPI.begin();
   rfid.PCD_Init();
+
   lcd.begin(16,2);
+
   pinMode(FPSPower, OUTPUT);
   digitalWrite(FPSPower, HIGH); //To be toggled later...
   delay(100);
   fps.Open();
   delay(100);
-  fps.SetLED(true);
   fps.SetLED(true);
 }
 void checkBiometrics();
@@ -43,16 +44,20 @@ void checkRFID();
 void unlock();
 void lock();
 void doorWatcher(); //Blocking!
+void lcdBacklightChecker();
 
 void checkBiometrics()
 {
-  // Identify fingerprint testx
+  // Identify fingerprint
   if (fps.IsPressFinger())
   {
     fps.CaptureFinger(false);
     int id = fps.Identify1_N();
     if (id <200)
     {
+      digitalWrite(lcdBacklight, HIGH);
+      lcdBacklightTimer = millis();
+      lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("Verified ID:");
       lcd.setCursor(0,1);
@@ -62,23 +67,16 @@ void checkBiometrics()
     }
     else
     {
-      lcd.setCursor(0,1);
-      lcd.print("F");
+      digitalWrite(lcdBacklight, HIGH);
+      lcdBacklightTimer = millis();
+      lcd.setCursor(0,0);
+      lcd.print("Invalid Finger");
     }
   }
-  else
-  {
-    lcd.setCursor(0,0);
-    lcd.print("FPS Ready   ");
-  }
-  delay(100);
 }
 
 void checkRFID()
 {
-
-  lcd.setCursor(0,0);
-  lcd.print("RFIDReady");
   String idRead;
   // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
   MFRC522::MIFARE_Key key;
@@ -97,68 +95,41 @@ void checkRFID()
       idRead.concat(rfid.uid.uidByte[i]);
     }
     digitalWrite(lcdBacklight, HIGH);
+    lcdBacklightTimer = millis();
     lcd.setCursor(0,1);
     lcd.print(idRead);
     delay(5000);
 
-    if (idRead == card1)
+    if(
+      idRead == card1 ||
+      idRead == card2 ||
+      idRead == card3 ||
+      idRead == card4 ||
+      idRead == card5 ||
+      idRead == card6)
     {
-      lcd.print("Card 1 read!");
+      digitalWrite(lcdBacklight, HIGH);
+      lcdBacklightTimer = millis();
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Card Accepted!");
       lcd.setCursor(0,1);
       lcd.print(idRead);
-      if(isLocked == 1){
+      if(isLocked == 1)
+      {
         unlock();
       }
+    } else 
+    {
+      digitalWrite(lcdBacklight, HIGH);
+      lcdBacklightTimer = millis();
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Invalid Card ID:");
+      lcd.setCursor(0,1);
+      lcd.print(idRead);
     }
-    if (idRead == card2)
-    {
-      lcd.print("Card 2 read!");
-      lcd.setCursor(0,1);
-      lcd.print(idRead);
-      if(isLocked == 1){
-        unlock();
-      }
-    }    
-    if (idRead == card3)
-    {
-      lcd.print("Card 3 read!");
-      lcd.setCursor(0,1);
-      lcd.print(idRead);
-      if(isLocked == 1){
-        unlock();
-      }
-    }   
-    if (idRead == card4)
-    {
-      lcd.print("Card 4 read!");
-      lcd.setCursor(0,1);
-      lcd.print(idRead);
-      if(isLocked == 1){
-        unlock();
-      }
-    }    
-    if (idRead == card5)
-    {
-      lcd.print("Card 5 read!");
-      lcd.setCursor(0,1);
-      lcd.print(idRead);
-      if(isLocked == 1){
-        unlock();
-      }
-    }    
-    if (idRead == card6)
-    {
-      lcd.print("Card 6 read!");
-      lcd.setCursor(0,1);
-      lcd.print(idRead);
-      if(isLocked == 1){
-        unlock();
-      }
-    }
-
-    delay(5000);
-    digitalWrite(lcdBacklight, LOW);
-    lcd.clear();
+    
   }
 }
 
@@ -166,6 +137,7 @@ void loop()
 {
   checkBiometrics();
   checkRFID();
+  lcdBacklightChecker();
 }
 
 void unlock()
@@ -176,6 +148,7 @@ void unlock()
   delay(1200);
   digitalWrite(lockPin1, LOW);
   digitalWrite(lockPin2, LOW);
+  doorWatcher();
 }
 
 void lock()
@@ -194,3 +167,10 @@ void doorWatcher()
   //Block code execution until door opened and closed, then run lock. 
 }
 
+void lcdBacklightChecker()
+{
+  if(millis() - lcdBacklightTimer >= 10000)
+  {
+    digitalWrite(lcdBacklight, LOW);
+  }
+}
