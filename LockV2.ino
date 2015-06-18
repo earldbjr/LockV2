@@ -52,6 +52,7 @@ void lcdBacklightChecker();
 
 void loop()
 {
+  lcd.print("loop");
   checkBiometrics();
   checkRFID();
   lcdBacklightChecker();
@@ -59,6 +60,7 @@ void loop()
 
 void checkBiometrics()
 {
+  fps.SetLED(true);
   // Identify fingerprint
   if (fps.IsPressFinger())
   {
@@ -74,13 +76,17 @@ void checkBiometrics()
       lcd.setCursor(0,1);
       lcd.print(id);
       unlockDoor();
+      return;
     }
     else
     {
       digitalWrite(lcdBacklight, HIGH);
+      lcd.clear();
       lcdBacklightTimer = millis();
       lcd.setCursor(0,0);
       lcd.print("Invalid Finger");
+      fps.SetLED(false);
+      return;
     }
   }
 }
@@ -97,7 +103,7 @@ void checkRFID()
   // New card found && new card selected
   if ( rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial())
   {
-
+    lcd.clear();
    lcd.setCursor(0,0);
    lcd.print("Found!");
    for (byte i = 0; i < rfid.uid.size; i++) 
@@ -128,6 +134,7 @@ void checkRFID()
       if(isLocked == 1)
       {
         unlockDoor();
+        return;
       }
       } else 
       {
@@ -138,6 +145,7 @@ void checkRFID()
         lcd.print("Invalid Card ID:");
         lcd.setCursor(0,1);
         lcd.print(idRead);
+        return;
       }
 
     }
@@ -175,7 +183,7 @@ void doorWatcher()
   {
     if(digitalRead(doorSensor) == 0)
     {
-      goto doorOpen;
+      goto doorOpen;  
     }
   }
   //Door unlocked, opened, closed, and sat for 2 seconds:
@@ -194,7 +202,7 @@ void lockDoor()
 
 void lcdBacklightChecker()
 {
-  if(millis() - lcdBacklightTimer >= 10000)
+  if(millis() - lcdBacklightTimer >= 5000)
   {
     lcd.clear();
     digitalWrite(lcdBacklight, LOW);

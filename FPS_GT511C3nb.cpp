@@ -729,7 +729,7 @@ Response_Packet* FPS_GT511C3::GetResponse()
 long startmillis = millis();
 	while (done == false)
 	{
-	if(millis() - startmillis >= 2000)
+	if(millis() - startmillis >= 200)
 {
 break;
 }
