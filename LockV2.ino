@@ -3,7 +3,7 @@
 #include <LiquidCrystal.h>
 #include <SPI.h>
 #include "MFRC522.h"
-#include "FPS_GT511C3.h"
+#include "FPS_GT511C3nb.h"
 #include "SoftwareSerial.h"
 
 #define SS_PIN 10
@@ -12,10 +12,12 @@
 #define FPSPower 4
 #define lockPin1 7
 #define lockPin2 8
+#define doorSensor 2
+
 long lcdBacklightTimer = 0;
 int isLocked = 0;
 String card1 = "2454512237";   //Given to Sun Bay office
-String card2 = "401641025450129"; //Zahrah's Purse
+String card2 = "4201651025450129";
 String card3 = "166204210181"; //Zahrah's Keychain
 String card4 = "4201651025450129";
 String card5 = "4201651025450129";   //Gizmo's Wallet
@@ -39,12 +41,21 @@ void setup()
   delay(100);
   fps.SetLED(true);
 }
+/////Forward Declarations/////
 void checkBiometrics();
 void checkRFID();
-void unlock();
-void lock();
+void unlockDoor();
+void lockDoor();
 void doorWatcher(); //Blocking!
 void lcdBacklightChecker();
+/////////////////////////////
+
+void loop()
+{
+  checkBiometrics();
+  checkRFID();
+  lcdBacklightChecker();
+}
 
 void checkBiometrics()
 {
@@ -62,8 +73,7 @@ void checkBiometrics()
       lcd.print("Verified ID:");
       lcd.setCursor(0,1);
       lcd.print(id);
-      unlock();
-      doorWatcher(); //Blocking!
+      unlockDoor();
     }
     else
     {
@@ -88,9 +98,9 @@ void checkRFID()
   if ( rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial())
   {
 
-     lcd.setCursor(0,0);
-     lcd.print("Found!");
-    for (byte i = 0; i < rfid.uid.size; i++) 
+   lcd.setCursor(0,0);
+   lcd.print("Found!");
+   for (byte i = 0; i < rfid.uid.size; i++) 
     { // Dump UID for authentication
       idRead.concat(rfid.uid.uidByte[i]);
     }
@@ -117,41 +127,62 @@ void checkRFID()
       lcd.print(idRead);
       if(isLocked == 1)
       {
-        unlock();
+        unlockDoor();
       }
-    } else 
-    {
-      digitalWrite(lcdBacklight, HIGH);
-      lcdBacklightTimer = millis();
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Invalid Card ID:");
-      lcd.setCursor(0,1);
-      lcd.print(idRead);
+      } else 
+      {
+        digitalWrite(lcdBacklight, HIGH);
+        lcdBacklightTimer = millis();
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print("Invalid Card ID:");
+        lcd.setCursor(0,1);
+        lcd.print(idRead);
+      }
+
     }
-    
   }
-}
 
-void loop()
+  void unlockDoor()
+  {
+    digitalWrite(lockPin1, LOW);
+    digitalWrite(lockPin2, HIGH);
+    isLocked = 0;
+    delay(1200);
+    digitalWrite(lockPin1, LOW);
+    digitalWrite(lockPin2, LOW);
+    doorWatcher();
+  }
+
+void doorWatcher()
 {
-  checkBiometrics();
-  checkRFID();
-  lcdBacklightChecker();
+  long startTime = millis();
+  while(digitalRead(doorSensor) == 1)
+  {
+    if(millis() - startTime >= 10000) //Catch door being unlocked, but not opened for 10 seconds, and relock.
+    {
+      lockDoor();
+      return;
+    }
+  }
+  doorOpen:
+  while(digitalRead(doorSensor) == 0) //Door found to be open. Wait for door close.
+  {
+    //Add future alarm for door left unsecure? Flash LCDBacklight?
+  }
+  startTime = millis(); //New timer value for door-closed check.
+  while(millis() - startTime <= 2000) //Door re-closed. Scan while waiting, and relock.
+  {
+    if(digitalRead(doorSensor) == 0)
+    {
+      goto doorOpen;
+    }
+  }
+  //Door unlocked, opened, closed, and sat for 2 seconds:
+  lockDoor();
 }
 
-void unlock()
-{
-  digitalWrite(lockPin1, LOW);
-  digitalWrite(lockPin2, HIGH);
-  isLocked = 0;
-  delay(1200);
-  digitalWrite(lockPin1, LOW);
-  digitalWrite(lockPin2, LOW);
-  doorWatcher();
-}
-
-void lock()
+void lockDoor()
 {
   digitalWrite(lockPin1, HIGH);
   digitalWrite(lockPin2, LOW);
@@ -161,16 +192,11 @@ void lock()
   digitalWrite(lockPin2, LOW);
 }
 
-void doorWatcher()
-{
-  //Put 10 second timeout here, and break block.
-  //Block code execution until door opened and closed, then run lock. 
-}
-
 void lcdBacklightChecker()
 {
   if(millis() - lcdBacklightTimer >= 10000)
   {
+    lcd.clear();
     digitalWrite(lcdBacklight, LOW);
   }
 }
