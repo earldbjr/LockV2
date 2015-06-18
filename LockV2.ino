@@ -52,7 +52,10 @@ void lcdBacklightChecker();
 
 void loop()
 {
+<<<<<<< HEAD
   lcd.print("loop");
+=======
+>>>>>>> acb04e6e0d5d9f9a61cc8e344ab7a56c0e644485
   checkBiometrics();
   checkRFID();
   lcdBacklightChecker();
@@ -76,7 +79,10 @@ void checkBiometrics()
       lcd.setCursor(0,1);
       lcd.print(id);
       unlockDoor();
+<<<<<<< HEAD
       return;
+=======
+>>>>>>> acb04e6e0d5d9f9a61cc8e344ab7a56c0e644485
     }
     else
     {
@@ -103,7 +109,11 @@ void checkRFID()
   // New card found && new card selected
   if ( rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial())
   {
+<<<<<<< HEAD
     lcd.clear();
+=======
+
+>>>>>>> acb04e6e0d5d9f9a61cc8e344ab7a56c0e644485
    lcd.setCursor(0,0);
    lcd.print("Found!");
    for (byte i = 0; i < rfid.uid.size; i++) 
@@ -134,7 +144,10 @@ void checkRFID()
       if(isLocked == 1)
       {
         unlockDoor();
+<<<<<<< HEAD
         return;
+=======
+>>>>>>> acb04e6e0d5d9f9a61cc8e344ab7a56c0e644485
       }
       } else 
       {
@@ -145,7 +158,10 @@ void checkRFID()
         lcd.print("Invalid Card ID:");
         lcd.setCursor(0,1);
         lcd.print(idRead);
+<<<<<<< HEAD
         return;
+=======
+>>>>>>> acb04e6e0d5d9f9a61cc8e344ab7a56c0e644485
       }
 
     }
@@ -183,7 +199,11 @@ void doorWatcher()
   {
     if(digitalRead(doorSensor) == 0)
     {
+<<<<<<< HEAD
       goto doorOpen;  
+=======
+      goto doorOpen;
+>>>>>>> acb04e6e0d5d9f9a61cc8e344ab7a56c0e644485
     }
   }
   //Door unlocked, opened, closed, and sat for 2 seconds:

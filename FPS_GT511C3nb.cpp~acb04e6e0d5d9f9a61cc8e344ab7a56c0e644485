@@ -6,7 +6,7 @@
 	TLDR; Wil Wheaton's Law
 */
 
-#include "FPS_GT511C3.h";
+#include "FPS_GT511C3nb.h";
 
 #pragma region -= Command_Packet Definitions =-
 
@@ -726,7 +726,7 @@ Response_Packet* FPS_GT511C3::GetResponse()
 	byte firstbyte = 0;
 	bool done = false;
 	_serial.listen();
-long startmillis == millis();
+long startmillis = millis();
 	while (done == false)
 	{
 	if(millis() - startmillis >= 2000)
