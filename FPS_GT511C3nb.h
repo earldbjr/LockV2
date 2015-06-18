@@ -6,8 +6,8 @@
 	TLDR; Wil Wheaton's Law
 */
 
-#ifndef FPS_GT511C3_h
-#define FPS_GT511C3_h
+#ifndef FPS_GT511C3nb_h
+#define FPS_GT511C3nb_h
 
 #include "Arduino.h";
 #include "SoftwareSerial.h";

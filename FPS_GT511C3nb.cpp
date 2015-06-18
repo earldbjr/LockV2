@@ -6,7 +6,7 @@
 	TLDR; Wil Wheaton's Law
 */
 
-#include "FPS_GT511C3.h";
+#include "FPS_GT511C3nb.h";
 
 #pragma region -= Command_Packet Definitions =-
 
